@@ -120,13 +120,15 @@ client.set_event_callback("paint_ui", function()
                     end
                 end
 
+                local segments = 8 if (particle_table[i].size >= 4 and particle_table[i].size <= 6) then segments = particle_table[i].size + 2 end
+
                 local fps_mode = ui.get(controls.particle_fps)
                 if (fps_mode == 1) then
                     renderer.circle(x_pos, y_pos, r, g, b, control_a, particle_table[i].size, 0, 1)
                 elseif (fps_mode == 2) then
-                    renderer.filled_circle(x_pos, y_pos, r, g, b, control_a, particle_table[i].size, 8)
+                    renderer.filled_circle(x_pos, y_pos, r, g, b, control_a, particle_table[i].size, segments)
                 else
-                    renderer.outlined_circle(x_pos, y_pos, r, g, b, control_a, particle_table[i].size, 12)
+                    renderer.outlined_circle(x_pos, y_pos, r, g, b, control_a, particle_table[i].size, segments)
                 end
             else
                 math.randomseed(unix_time + i)
