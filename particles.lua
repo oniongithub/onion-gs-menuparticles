@@ -1,4 +1,4 @@
-local ffi, vector = require("ffi"), require("vector")
+local vector = require("vector")
 local screen_size, mouse_pos = vector(client.screen_size()), vector(ui.mouse_position())
 
 local controls = {
