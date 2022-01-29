@@ -122,19 +122,8 @@ client.set_event_callback("paint_ui", function()
                     end
                 end
 
-                local segments = 8 if (particle_table[i].size >= 4 and particle_table[i].size <= 6) then segments = particle_table[i].size + 2 end
-
-                local fps_mode = ui.get(controls.particle_fps)
-                if (fps_mode == 1) then
-                    renderer.circle(x_pos, y_pos, r, g, b, control_a, particle_table[i].size, 0, 1)
-                elseif (fps_mode == 2) then
-                    renderer.filled_circle(x_pos, y_pos, r, g, b, control_a, particle_table[i].size, segments)
-                else
-                    renderer.outlined_circle(x_pos, y_pos, r, g, b, control_a, particle_table[i].size, segments)
-                end
-
                 if (particle_connection) then
-                    for f = 1, #particle_table do
+                    for f = i, #particle_table do
                         if (f ~= i) then
                             local fall_percent_2 = (unix_time - particle_table[f].time) / particle_table[f].speed
                             local y_pos_2 = screen_size.y * fall_percent_2 + particle_table[f].start
@@ -145,6 +134,17 @@ client.set_event_callback("paint_ui", function()
                             end
                         end
                     end
+                end
+
+                local segments = 8 if (particle_table[i].size >= 4 and particle_table[i].size <= 6) then segments = particle_table[i].size + 2 end
+
+                local fps_mode = ui.get(controls.particle_fps)
+                if (fps_mode == 1) then
+                    renderer.circle(x_pos, y_pos, r, g, b, control_a, particle_table[i].size, 0, 1)
+                elseif (fps_mode == 2) then
+                    renderer.filled_circle(x_pos, y_pos, r, g, b, control_a, particle_table[i].size, segments)
+                else
+                    renderer.outlined_circle(x_pos, y_pos, r, g, b, control_a, particle_table[i].size, segments)
                 end
             else
                 math.randomseed(unix_time + i)
