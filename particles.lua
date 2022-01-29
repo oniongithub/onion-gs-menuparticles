@@ -5,10 +5,6 @@ local surfaceTable = ffi.cast(ffi.typeof("void***"), client.create_interface("vg
 local drawSetColor = ffi.cast(ffi.typeof("void(__thiscall*)(void*, int, int, int, int)"), surfaceTable[0][15])
 local drawOutlinedCircle = ffi.cast(ffi.typeof("void(__thiscall*)(void*, int, int, int, int)"), surfaceTable[0][103])
 
-function renderer.angle_to_rad(angle)
-    return angle * (math.pi / 180);
-end
-
 function renderer.outlined_circle(x, y, r, g, b, a, radius, segments)
     drawSetColor(surfaceTable, r, g, b, a)
     drawOutlinedCircle(surfaceTable, x, y, radius, segments)
@@ -19,7 +15,7 @@ function renderer.filled_circle(x, y, r, g, b, a, radius, segments)
 
     for i = 0, segments do
         if (i * per_angle <= 360) then
-            local cur_pos_x, cur_pos_y, current_angle = nil, nil, renderer.angle_to_rad(i * per_angle)
+            local cur_pos_x, cur_pos_y, current_angle = nil, nil, math.rad(i * per_angle)
 
             if (not last_pos_x or not last_pos_y) then
                 last_pos_x, last_pos_y = radius * math.cos(current_angle) + x, radius * math.sin(current_angle) + y
@@ -43,6 +39,9 @@ local controls = {
     particle_max = ui.new_slider("Misc", "Settings", "Maximum Size", 1, 25, 8),
     particle_speed_min = ui.new_slider("Misc", "Settings", "Minimum Speed", 1000, 25000, 2500),
     particle_speed_max = ui.new_slider("Misc", "Settings", "Maximum Speed", 1000, 25000, 7500),
+    particle_connection = ui.new_checkbox("Misc", "Settings", "Particle Connection"),
+    particle_connection_radius = ui.new_slider("Misc", "Settings", "Connection Radius", 1, screen_size.x, 100),
+    particle_connection_color = ui.new_color_picker("Misc", "Settings", "Connection Color", 255, 221, 135, 200),
     mouse_interaction = ui.new_checkbox("Misc", "Settings", "Mouse Interaction"),
     mouse_radius = ui.new_slider("Misc", "Settings", "Mouse Radius", 1, 250, 100),
 }
@@ -91,8 +90,11 @@ client.set_event_callback("paint_ui", function()
 
     if (ui.get(controls.menu_particles) and ui.is_menu_open()) then
         local r, g, b, a = ui.get(controls.particle_color)
+        local c_r, c_g, c_b, c_a = ui.get(controls.particle_connection_color)
         local mouse_interaction = ui.get(controls.mouse_interaction)
         local mouse_radius = ui.get(controls.mouse_radius)
+        local particle_connection = ui.get(controls.particle_connection)
+        local particle_connection_radius = ui.get(controls.particle_connection_radius)
 
         for i = 1, #particle_table do
             local control_a = a
@@ -129,6 +131,20 @@ client.set_event_callback("paint_ui", function()
                     renderer.filled_circle(x_pos, y_pos, r, g, b, control_a, particle_table[i].size, segments)
                 else
                     renderer.outlined_circle(x_pos, y_pos, r, g, b, control_a, particle_table[i].size, segments)
+                end
+
+                if (particle_connection) then
+                    for f = 1, #particle_table do
+                        if (f ~= i) then
+                            local fall_percent_2 = (unix_time - particle_table[f].time) / particle_table[f].speed
+                            local y_pos_2 = screen_size.y * fall_percent_2 + particle_table[f].start
+                            local x_pos_2 = particle_table[f].x_pos + (particle_table[f].drift * fall_percent_2)
+
+                            if (math.sqrt((x_pos - x_pos_2)^2 + (y_pos - y_pos_2)^2) <= particle_connection_radius) then
+                                renderer.line(x_pos, y_pos, x_pos_2, y_pos_2, c_r, c_g, c_b, c_a)
+                            end
+                        end
+                    end
                 end
             else
                 math.randomseed(unix_time + i)
