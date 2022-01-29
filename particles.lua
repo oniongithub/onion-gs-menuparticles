@@ -1,5 +1,6 @@
-local vector, ffi, bit = require("vector"), require("ffi"), require("bit")
-local screen_size, mouse_pos = vector(client.screen_size()), vector(ui.mouse_position())
+local vector, ffi = require("vector"), require("ffi")
+local screen_size_x, screen_size_y, mouse_pos_x, mouse_pos_y = client.screen_size(), ui.mouse_position()
+local r, g, b, a, c_r, c_g, c_b, c_a, mouse_interaction, mouse_radius, particle_connection, particle_connection_radius, fps_mode, gui_pos_x, gui_pos_y, gui_size_x, gui_size_y, time_difference
 
 local surfaceTable = ffi.cast(ffi.typeof("void***"), client.create_interface("vguimatsurface.dll", "VGUI_Surface031"))
 local drawSetColor = ffi.cast(ffi.typeof("void(__thiscall*)(void*, int, int, int, int)"), surfaceTable[0][15])
@@ -48,14 +49,14 @@ local controls = {
     particle_fps = ui.new_slider("Misc", "Settings", "Particle Optimization", 1, 4, 4),
     particle_bounds = ui.new_checkbox("Misc", "Settings", "Bounds Limit"),
     particle_count = ui.new_slider("Misc", "Settings", "Particle Count", 10, 1000, 125),
-    particle_side_drift = ui.new_slider("Misc", "Settings", "Particle Drift", 0, screen_size.x, screen_size.x),
+    particle_side_drift = ui.new_slider("Misc", "Settings", "Particle Drift", 0, screen_size_x, screen_size_x),
     particle_random_alpha = ui.new_slider("Misc", "Settings", "Particle Randomized Alpha", 0, 100, 75),
     particle_min = ui.new_slider("Misc", "Settings", "Minimum Size", 1, 25, 3),
     particle_max = ui.new_slider("Misc", "Settings", "Maximum Size", 1, 25, 5),
     particle_speed_min = ui.new_slider("Misc", "Settings", "Minimum Speed", 1000, 25000, 10000),
     particle_speed_max = ui.new_slider("Misc", "Settings", "Maximum Speed", 1000, 25000, 15000),
     particle_connection = ui.new_checkbox("Misc", "Settings", "Particle Connection"),
-    particle_connection_radius = ui.new_slider("Misc", "Settings", "Connection Radius", 1, screen_size.x, 100),
+    particle_connection_radius = ui.new_slider("Misc", "Settings", "Connection Radius", 1, screen_size_x, 100),
     particle_connection_color = ui.new_color_picker("Misc", "Settings", "Connection Color", 255, 140, 140, 200),
     mouse_interaction = ui.new_checkbox("Misc", "Settings", "Mouse Interaction"),
     mouse_radius = ui.new_slider("Misc", "Settings", "Mouse Radius", 1, 250, 100),
@@ -86,7 +87,7 @@ local function regenerate_particle_table(type)
 
     for i = 1, value - #particle_table do
         math.randomseed(unix_time + i)
-        table.insert(particle_table, {size = math.random(ui.get(controls.particle_min), ui.get(controls.particle_max)), alpha = math.random(0, ui.get(controls.particle_random_alpha)), drift = math.random(-ui.get(controls.particle_side_drift), ui.get(controls.particle_side_drift)), speed = math.random(ui.get(controls.particle_speed_min), ui.get(controls.particle_speed_max)), x_pos = math.random(0, screen_size.x), time = unix_time, start = math.random(0, screen_size.y)})
+        table.insert(particle_table, {size = math.random(ui.get(controls.particle_min), ui.get(controls.particle_max)), alpha = math.random(0, ui.get(controls.particle_random_alpha)), drift = math.random(-ui.get(controls.particle_side_drift), ui.get(controls.particle_side_drift)), speed = math.random(ui.get(controls.particle_speed_min), ui.get(controls.particle_speed_max)), x_pos = math.random(0, screen_size_x), time = unix_time, start = math.random(0, screen_size_y)})
     end
 end
 
@@ -100,47 +101,44 @@ ui.set_callback(controls.particle_random_alpha, function() regenerate_particle_t
 
 regenerate_particle_table()
 client.set_event_callback("paint_ui", function()
-    mouse_pos = vector(ui.mouse_position())
+    mouse_pos_x, mouse_pos_y = ui.mouse_position()
     unix_time = client.unix_time()
 
     if (ui.get(controls.menu_particles) and ui.is_menu_open()) then
-        local r, g, b, a = ui.get(controls.particle_color)
-        local c_r, c_g, c_b, c_a = ui.get(controls.particle_connection_color)
-        local mouse_interaction = ui.get(controls.mouse_interaction)
-        local mouse_radius = ui.get(controls.mouse_radius)
-        local particle_connection = ui.get(controls.particle_connection)
-        local particle_connection_radius = ui.get(controls.particle_connection_radius)
-        local fps_mode = ui.get(controls.particle_fps)
-        local gui_pos_x, gui_pos_y = ui.menu_position()
-        local gui_size_x, gui_size_y = ui.menu_size()
+        r, g, b, a = ui.get(controls.particle_color)
+        c_r, c_g, c_b, c_a = ui.get(controls.particle_connection_color)
+        mouse_interaction, mouse_radius = ui.get(controls.mouse_interaction), ui.get(controls.mouse_radius)
+        particle_connection, particle_connection_radius, fps_mode = ui.get(controls.particle_connection), ui.get(controls.particle_connection_radius), ui.get(controls.particle_fps)
+        gui_pos_x, gui_pos_y = ui.menu_position()
+        gui_size_x, gui_size_y = ui.menu_size()
 
         if (fps_mode == 3) then renderer.set_color(r, g, b, a) end
+        if (particle_time_flush.flush) then time_difference = unix_time - particle_time_flush.time end
 
         for i = 1, #particle_table do
             local control_a = a
             control_a = a - (a * ((particle_table[i].alpha) / 100))
 
             if (particle_time_flush.flush) then
-                local time_difference = unix_time - particle_time_flush.time
                 particle_table[i].time = particle_table[i].time + time_difference
             end
 
             local fall_percent = (unix_time - particle_table[i].time) / particle_table[i].speed
-            local y_pos = screen_size.y * fall_percent + particle_table[i].start
+            local y_pos = screen_size_y * fall_percent + particle_table[i].start
             local x_pos = particle_table[i].x_pos + (particle_table[i].drift * fall_percent)
 
             if (ui.get(controls.particle_bounds)) then
                 if (math.in_bounds(gui_pos_x, gui_pos_y, gui_size_x, gui_size_y, x_pos, y_pos)) then goto skip_that_shit end
             end
 
-            if (fall_percent <= 1 and y_pos < screen_size.y and x_pos >= 0 and x_pos <= screen_size.x) then
+            if (fall_percent <= 1 and y_pos < screen_size_y and x_pos >= 0 and x_pos <= screen_size_x) then
                 if (mouse_interaction) then
-                    if (math.abs(y_pos - mouse_pos.y) <= mouse_radius) then
-                        if (math.abs(x_pos - mouse_pos.x) <= mouse_radius) then
-                            if (x_pos > mouse_pos.x) then
-                                particle_table[i].x_pos = mouse_pos.x + mouse_radius - (particle_table[i].drift * fall_percent)
+                    if (math.abs(y_pos - mouse_pos_y) <= mouse_radius) then
+                        if (math.abs(x_pos - mouse_pos_x) <= mouse_radius) then
+                            if (x_pos > mouse_pos_x) then
+                                particle_table[i].x_pos = mouse_pos_x + mouse_radius - (particle_table[i].drift * fall_percent)
                             else
-                                particle_table[i].x_pos = mouse_pos.x - mouse_radius - (particle_table[i].drift * fall_percent)
+                                particle_table[i].x_pos = mouse_pos_x - mouse_radius - (particle_table[i].drift * fall_percent)
                             end
                         end
                     end
@@ -150,7 +148,7 @@ client.set_event_callback("paint_ui", function()
                     for f = i, #particle_table do
                         if (f ~= i) then
                             local fall_percent_2 = (unix_time - particle_table[f].time) / particle_table[f].speed
-                            local y_pos_2 = screen_size.y * fall_percent_2 + particle_table[f].start
+                            local y_pos_2 = screen_size_y * fall_percent_2 + particle_table[f].start
                             local x_pos_2 = particle_table[f].x_pos + (particle_table[f].drift * fall_percent_2)
 
                             if (math.sqrt((x_pos - x_pos_2)^2 + (y_pos - y_pos_2)^2) <= particle_connection_radius) then
@@ -173,9 +171,9 @@ client.set_event_callback("paint_ui", function()
                 end
             else
                 math.randomseed(unix_time + i)
-                particle_table[i].time, particle_table[i].start, particle_table[i].x_pos = unix_time, 0, math.random(0, screen_size.x)
+                particle_table[i].time, particle_table[i].start, particle_table[i].x_pos = unix_time, 0, math.random(0, screen_size_x)
             end
-            
+
             ::skip_that_shit::
         end
 
