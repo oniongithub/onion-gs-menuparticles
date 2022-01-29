@@ -35,7 +35,7 @@ end
 local controls = {
     menu_particles = ui.new_checkbox("Misc", "Settings", "Menu Particles"),
     particle_color = ui.new_color_picker("Misc", "Settings", "Particle Color", 255, 221, 135, 200),
-    particle_fps = ui.new_slider("Misc", "Settings", "Particle Optimization", 1, 3, 2),
+    particle_fps = ui.new_slider("Misc", "Settings", "Particle Optimization", 1, 4, 2),
     particle_count = ui.new_slider("Misc", "Settings", "Particle Count", 10, 1000, 125),
     particle_side_drift = ui.new_slider("Misc", "Settings", "Particle Drift", 0, screen_size.x, 100),
     particle_random_alpha = ui.new_slider("Misc", "Settings", "Particle Randomized Alpha", 0, 100, 20),
@@ -149,8 +149,10 @@ client.set_event_callback("paint_ui", function()
                     renderer.circle(x_pos, y_pos, r, g, b, control_a, particle_table[i].size, 0, 1)
                 elseif (fps_mode == 2) then
                     renderer.filled_circle(x_pos, y_pos, r, g, b, control_a, particle_table[i].size, segments)
-                else
+                elseif (fps_mode == 3) then
                     renderer.outlined_circle(x_pos, y_pos, particle_table[i].size, segments)
+                else
+                    renderer.rectangle(x_pos, y_pos, particle_table[i].size, particle_table[i].size, r, g, b, control_a)
                 end
             else
                 math.randomseed(unix_time + i)
