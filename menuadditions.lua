@@ -1,5 +1,6 @@
 local vector, ffi = require("vector"), require("ffi")
-local screen_size_x, screen_size_y, mouse_pos_x, mouse_pos_y = client.screen_size(), ui.mouse_position()
+local screen_size_x, screen_size_y = client.screen_size()
+local mouse_pos_x, mouse_pos_y = ui.mouse_position()
 local r, g, b, a, c_r, c_g, c_b, c_a, mouse_interaction, mouse_radius, particle_connection, particle_connection_radius, fps_mode, gui_pos_x, gui_pos_y, gui_size_x, gui_size_y, time_difference
 
 local surfaceTable = ffi.cast(ffi.typeof("void***"), client.create_interface("vguimatsurface.dll", "VGUI_Surface031"))
@@ -60,6 +61,9 @@ local controls = {
     particle_connection_color = ui.new_color_picker("Misc", "Settings", "Connection Color", 255, 140, 140, 200),
     mouse_interaction = ui.new_checkbox("Misc", "Settings", "Mouse Interaction"),
     mouse_radius = ui.new_slider("Misc", "Settings", "Mouse Radius", 1, 250, 100),
+    menu_blur = ui.new_checkbox("Misc", "Settings", "Menu Blur"),
+    menu_background = ui.new_checkbox("Misc", "Settings", "Menu Background"),
+    menu_background_color = ui.new_color_picker("Misc", "Settings", "Background Color", 25, 25, 25, 100),
 }
 
 local clux = client.unix_time
@@ -102,7 +106,19 @@ ui.set_callback(controls.particle_random_alpha, function() regenerate_particle_t
 regenerate_particle_table()
 client.set_event_callback("paint_ui", function()
     mouse_pos_x, mouse_pos_y = ui.mouse_position()
+    screen_size_x, screen_size_y = client.screen_size()
     unix_time = client.unix_time()
+
+    if (ui.is_menu_open()) then
+        if (ui.get(controls.menu_blur)) then
+            renderer.blur(0, 0, screen_size_x, screen_size_y)
+        end
+
+        if (ui.get(controls.menu_background)) then
+            local m_r, m_g, m_b, m_a = ui.get(controls.menu_background_color)
+            renderer.rectangle(0, 0, screen_size_x, screen_size_y, m_r, m_g, m_b, m_a)
+        end
+    end
 
     if (ui.get(controls.menu_particles) and ui.is_menu_open()) then
         r, g, b, a = ui.get(controls.particle_color)
