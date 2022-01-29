@@ -5,6 +5,16 @@ local surfaceTable = ffi.cast(ffi.typeof("void***"), client.create_interface("vg
 local drawSetColor = ffi.cast(ffi.typeof("void(__thiscall*)(void*, int, int, int, int)"), surfaceTable[0][15])
 local drawOutlinedCircle = ffi.cast(ffi.typeof("void(__thiscall*)(void*, int, int, int, int)"), surfaceTable[0][103])
 
+function math.in_bounds(x, y, w, h, pos_x, pos_y)
+    if (pos_x >= x and pos_x <= x + w) then
+        if (pos_y >= y and pos_y <= y + h) then
+            return true
+        end
+    end
+
+    return false
+end
+
 function renderer.set_color(r, g, b, a)
     drawSetColor(surfaceTable, r, g, b, a)
 end
@@ -36,6 +46,7 @@ local controls = {
     menu_particles = ui.new_checkbox("Misc", "Settings", "Menu Particles"),
     particle_color = ui.new_color_picker("Misc", "Settings", "Particle Color", 255, 140, 140, 200),
     particle_fps = ui.new_slider("Misc", "Settings", "Particle Optimization", 1, 4, 4),
+    particle_bounds = ui.new_checkbox("Misc", "Settings", "Bounds Limit"),
     particle_count = ui.new_slider("Misc", "Settings", "Particle Count", 10, 1000, 125),
     particle_side_drift = ui.new_slider("Misc", "Settings", "Particle Drift", 0, screen_size.x, screen_size.x),
     particle_random_alpha = ui.new_slider("Misc", "Settings", "Particle Randomized Alpha", 0, 100, 75),
@@ -100,6 +111,8 @@ client.set_event_callback("paint_ui", function()
         local particle_connection = ui.get(controls.particle_connection)
         local particle_connection_radius = ui.get(controls.particle_connection_radius)
         local fps_mode = ui.get(controls.particle_fps)
+        local gui_pos_x, gui_pos_y = ui.menu_position()
+        local gui_size_x, gui_size_y = ui.menu_size()
 
         if (fps_mode == 3) then renderer.set_color(r, g, b, a) end
 
@@ -115,6 +128,10 @@ client.set_event_callback("paint_ui", function()
             local fall_percent = (unix_time - particle_table[i].time) / particle_table[i].speed
             local y_pos = screen_size.y * fall_percent + particle_table[i].start
             local x_pos = particle_table[i].x_pos + (particle_table[i].drift * fall_percent)
+
+            if (ui.get(controls.particle_bounds)) then
+                if (math.in_bounds(gui_pos_x, gui_pos_y, gui_size_x, gui_size_y, x_pos, y_pos)) then goto skip_that_shit end
+            end
 
             if (fall_percent <= 1 and y_pos < screen_size.y and x_pos >= 0 and x_pos <= screen_size.x) then
                 if (mouse_interaction) then
@@ -158,6 +175,8 @@ client.set_event_callback("paint_ui", function()
                 math.randomseed(unix_time + i)
                 particle_table[i].time, particle_table[i].start, particle_table[i].x_pos = unix_time, 0, math.random(0, screen_size.x)
             end
+            
+            ::skip_that_shit::
         end
 
         if (particle_time_flush.flush) then
