@@ -5,22 +5,26 @@ local surfaceTable = ffi.cast(ffi.typeof("void***"), client.create_interface("vg
 local drawSetColor = ffi.cast(ffi.typeof("void(__thiscall*)(void*, int, int, int, int)"), surfaceTable[0][15])
 local drawOutlinedCircle = ffi.cast(ffi.typeof("void(__thiscall*)(void*, int, int, int, int)"), surfaceTable[0][103])
 
-function renderer.outlined_circle(x, y, r, g, b, a, radius, segments)
+function renderer.set_color(r, g, b, a)
     drawSetColor(surfaceTable, r, g, b, a)
+end
+
+function renderer.outlined_circle(x, y, radius, segments)
     drawOutlinedCircle(surfaceTable, x, y, radius, segments)
 end
 
 function renderer.filled_circle(x, y, r, g, b, a, radius, segments)
-    local per_angle, last_pos_x, last_pos_y = 360 / segments
+    local per_angle, last_pos_x, last_pos_y, cur_pos_x, cur_pos_y, current_angle, cos, sin = 360 / segments
 
     for i = 0, segments do
         if (i * per_angle <= 360) then
-            local cur_pos_x, cur_pos_y, current_angle = nil, nil, math.rad(i * per_angle)
+            current_angle, cos, sin = math.rad(i * per_angle)
+            cos, sin = radius * math.cos(current_angle), radius * math.sin(current_angle)
 
             if (not last_pos_x or not last_pos_y) then
-                last_pos_x, last_pos_y = radius * math.cos(current_angle) + x, radius * math.sin(current_angle) + y
+                last_pos_x, last_pos_y = cos + x, sin + y
             else
-                cur_pos_x, cur_pos_y = radius * math.cos(current_angle) + x, radius * math.sin(current_angle) + y;          
+                cur_pos_x, cur_pos_y = cos + x, sin + y;          
                 renderer.triangle(last_pos_x, last_pos_y, cur_pos_x, cur_pos_y, x, y, r, g, b, a)
                 last_pos_x, last_pos_y = cur_pos_x, cur_pos_y
             end
@@ -95,6 +99,9 @@ client.set_event_callback("paint_ui", function()
         local mouse_radius = ui.get(controls.mouse_radius)
         local particle_connection = ui.get(controls.particle_connection)
         local particle_connection_radius = ui.get(controls.particle_connection_radius)
+        local fps_mode = ui.get(controls.particle_fps)
+
+        if (fps_mode == 3) then renderer.set_color(r, g, b, a) end
 
         for i = 1, #particle_table do
             local control_a = a
@@ -138,13 +145,12 @@ client.set_event_callback("paint_ui", function()
 
                 local segments = 8 if (particle_table[i].size >= 4 and particle_table[i].size <= 6) then segments = particle_table[i].size + 2 end
 
-                local fps_mode = ui.get(controls.particle_fps)
                 if (fps_mode == 1) then
                     renderer.circle(x_pos, y_pos, r, g, b, control_a, particle_table[i].size, 0, 1)
                 elseif (fps_mode == 2) then
                     renderer.filled_circle(x_pos, y_pos, r, g, b, control_a, particle_table[i].size, segments)
                 else
-                    renderer.outlined_circle(x_pos, y_pos, r, g, b, control_a, particle_table[i].size, segments)
+                    renderer.outlined_circle(x_pos, y_pos, particle_table[i].size, segments)
                 end
             else
                 math.randomseed(unix_time + i)
