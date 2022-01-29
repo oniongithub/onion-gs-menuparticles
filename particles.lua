@@ -34,18 +34,18 @@ end
 
 local controls = {
     menu_particles = ui.new_checkbox("Misc", "Settings", "Menu Particles"),
-    particle_color = ui.new_color_picker("Misc", "Settings", "Particle Color", 255, 221, 135, 200),
-    particle_fps = ui.new_slider("Misc", "Settings", "Particle Optimization", 1, 4, 2),
+    particle_color = ui.new_color_picker("Misc", "Settings", "Particle Color", 255, 140, 140, 200),
+    particle_fps = ui.new_slider("Misc", "Settings", "Particle Optimization", 1, 4, 4),
     particle_count = ui.new_slider("Misc", "Settings", "Particle Count", 10, 1000, 125),
-    particle_side_drift = ui.new_slider("Misc", "Settings", "Particle Drift", 0, screen_size.x, 100),
-    particle_random_alpha = ui.new_slider("Misc", "Settings", "Particle Randomized Alpha", 0, 100, 20),
+    particle_side_drift = ui.new_slider("Misc", "Settings", "Particle Drift", 0, screen_size.x, screen_size.x),
+    particle_random_alpha = ui.new_slider("Misc", "Settings", "Particle Randomized Alpha", 0, 100, 75),
     particle_min = ui.new_slider("Misc", "Settings", "Minimum Size", 1, 25, 3),
-    particle_max = ui.new_slider("Misc", "Settings", "Maximum Size", 1, 25, 8),
-    particle_speed_min = ui.new_slider("Misc", "Settings", "Minimum Speed", 1000, 25000, 2500),
-    particle_speed_max = ui.new_slider("Misc", "Settings", "Maximum Speed", 1000, 25000, 7500),
+    particle_max = ui.new_slider("Misc", "Settings", "Maximum Size", 1, 25, 5),
+    particle_speed_min = ui.new_slider("Misc", "Settings", "Minimum Speed", 1000, 25000, 10000),
+    particle_speed_max = ui.new_slider("Misc", "Settings", "Maximum Speed", 1000, 25000, 15000),
     particle_connection = ui.new_checkbox("Misc", "Settings", "Particle Connection"),
     particle_connection_radius = ui.new_slider("Misc", "Settings", "Connection Radius", 1, screen_size.x, 100),
-    particle_connection_color = ui.new_color_picker("Misc", "Settings", "Connection Color", 255, 221, 135, 200),
+    particle_connection_color = ui.new_color_picker("Misc", "Settings", "Connection Color", 255, 140, 140, 200),
     mouse_interaction = ui.new_checkbox("Misc", "Settings", "Mouse Interaction"),
     mouse_radius = ui.new_slider("Misc", "Settings", "Mouse Radius", 1, 250, 100),
 }
@@ -152,7 +152,7 @@ client.set_event_callback("paint_ui", function()
                 elseif (fps_mode == 3) then
                     renderer.outlined_circle(x_pos, y_pos, particle_table[i].size, segments)
                 else
-                    renderer.rectangle(x_pos, y_pos, particle_table[i].size, particle_table[i].size, r, g, b, control_a)
+                    renderer.rectangle(x_pos - particle_table[i].size / 2, y_pos - particle_table[i].size / 2, particle_table[i].size, particle_table[i].size, r, g, b, control_a)
                 end
             else
                 math.randomseed(unix_time + i)
