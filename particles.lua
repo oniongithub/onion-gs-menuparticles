@@ -15,37 +15,18 @@ function renderer.outlined_circle(x, y, r, g, b, a, radius, segments)
 end
 
 function renderer.filled_circle(x, y, r, g, b, a, radius, segments)
-    local perAngle = 360 / segments;
+    local per_angle, last_pos_x, last_pos_y = 360 / segments
 
-    local lastPos, lastPos2;
     for i = 0, segments do
-        if (i * perAngle <= 360) then
-            local curPos, curPos2;
-            local currentAngle = renderer.angle_to_rad(i * perAngle);
+        if (i * per_angle <= 360) then
+            local cur_pos_x, cur_pos_y, current_angle = nil, nil, renderer.angle_to_rad(i * per_angle)
 
-            if (not lastPos) then
-                lastPos = vector(radius * math.cos(currentAngle) + x, radius * math.sin(currentAngle) + y);
-                
-                if (secondRadius) then
-                    lastPos2 = vector(secondRadius * math.cos(currentAngle) + x, secondRadius * math.sin(currentAngle) + y);
-                end
+            if (not last_pos_x or not last_pos_y) then
+                last_pos_x, last_pos_y = radius * math.cos(current_angle) + x, radius * math.sin(current_angle) + y
             else
-                curPos = vector(radius * math.cos(currentAngle) + x, radius * math.sin(currentAngle) + y);
-                
-                if (secondRadius) then
-                    curPos2 = vector(secondRadius * math.cos(currentAngle) + x, secondRadius * math.sin(currentAngle) + y);
-                end
-
-                if (secondRadius) then
-                    renderer.triangle(lastPos.x, lastPos.y, curPos.x, curPos.y, lastPos2.x, lastPos2.y, r, g, b, a)
-                    renderer.triangle(curPos2.x, curPos2.y, curPos.x, curPos.y, lastPos2.x, lastPos2.y, r, g, b, a)
-
-                    lastPos2 = curPos2
-                else
-                    renderer.triangle(lastPos.x, lastPos.y, curPos.x, curPos.y, x, y, r, g, b, a)
-                end
-
-                lastPos = curPos;
+                cur_pos_x, cur_pos_y = radius * math.cos(current_angle) + x, radius * math.sin(current_angle) + y;          
+                renderer.triangle(last_pos_x, last_pos_y, cur_pos_x, cur_pos_y, x, y, r, g, b, a)
+                last_pos_x, last_pos_y = cur_pos_x, cur_pos_y
             end
         end
     end
